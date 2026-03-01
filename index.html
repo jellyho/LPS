@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="description" content="Latent Policy Steering through One-Step Flow Policies">
+  <meta name="keywords" content="LPS, Offline RL, MeanFlow, Latent Policy Steering, Robotics">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    .tldr-container {
+      background-color: #f5f5f5;
+      border-radius: 8px;
+      padding: 30px;
+      margin: 40px 0;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    }
+
+    .tldr-title {
+      color: #333 !important;
+      font-size: 2rem !important;
+      font-weight: 700 !important;
+      margin-bottom: 25px !important;
+      display: flex;
+      align-items: center;
+    }
+
+    .tldr-title::before {
+      content: "📌";
+      margin-right: 12px;
+      font-size: 1.8rem;
+    }
+
+    .tldr-video-container {
+      border-radius: 6px;
+      overflow: hidden;
+      margin: 20px 0;
+      border: 1px solid #e0e0e0;
+    }
+
+    .tldr-video {
+      width: 100%;
+      display: block;
+    }
+
+    .tldr-highlight {
+      background-color: #e8e8e8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+      .tldr-title {
+        font-size: 1.8rem !important;
+      }
+    }
+
+    p {
+      line-height: 1.65;
+    }
+
+    .method-box {
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      border-radius: 10px;
+      padding: 25px;
+      margin: 15px 0;
+      border-left: 4px solid #495057;
+    }
+
+    .method-box h4 {
+      margin-top: 0;
+      color: #212529;
+    }
+
+    .equation-box {
+      background-color: #fff;
+      border: 1px solid #dee2e6;
+      border-radius: 6px;
+      padding: 15px 20px;
+      margin: 15px 0;
+      text-align: center;
+      font-family: 'Castoro', serif;
+      font-size: 1.1em;
+    }
+
+    .key-insight {
+      background-color: #fff3cd;
+      border-left: 4px solid #ffc107;
+      padding: 15px 20px;
+      margin: 20px 0;
+      border-radius: 0 6px 6px 0;
+    }
+
+    .key-insight strong {
+      color: #856404;
+    }
+  </style>
+  <title>Latent Policy Steering through One-Step Flow Policies</title>
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-E0BNHRNJYF"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+
+    gtag('config', 'G-E0BNHRNJYF');
+  </script>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
+
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+  <link rel="icon" href="./static/images/favicon.png">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+  <script src="./static/js/bulma-carousel.min.js"></script>
+  <script src="./static/js/bulma-slider.min.js"></script>
+  <script src="./static/js/index.js"></script>
+</head>
+
+<body>
+
+  <nav class="navbar" role="navigation" aria-label="main navigation">
+    <div class="navbar-brand">
+      <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+      </a>
+    </div>
+    <div class="navbar-menu">
+      <div class="navbar-start" style="flex-grow: 1; justify-content: center;">
+        <a class="navbar-item" href="https://jellyho.github.io">
+          <span class="icon">
+            <i class="fas fa-home"></i>
+          </span>
+        </a>
+
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">
+            More Research
+          </a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="https://jellyho.github.io/TwinVLA">
+              TwinVLA
+            </a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </nav>
+
+
+  <section class="hero">
+    <div class="hero-body" style="padding-bottom: 0;">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column has-text-centered">
+            <h1 class="title is-1 publication-title">Latent Policy Steering through One-Step Flow Policies</h1>
+            <div class="is-size-5 publication-venue">
+              <h2 class="title">Preprint</h2>
+            </div>
+            <div class="is-size-5 publication-authors">
+              <span class="author-block">
+                <a href="https://jellyho.github.io">Hokyun Im</a><sup>1</sup>,</span>
+              <span class="author-block">
+                <a href="https://www.microsoft.com/en-us/research/people/akolobov/">Andrey Kolobov</a><sup>2</sup>,
+              </span>
+              <span class="author-block">
+                <a href="https://www.microsoft.com/en-us/research/people/jianf/">Jianlong Fu</a><sup>2</sup>,
+              </span>
+              <span class="author-block">
+                <a href="https://youngwoon.github.io/">Youngwoon Lee</a><sup>1</sup>,
+              </span>
+            </div>
+
+            <div class="is-size-5 publication-authors">
+              <span class="author-block"><sup>1</sup>Yonsei University,</span>
+              <span class="author-block"><sup>2</sup>Microsoft Research</span>
+            </div>
+
+            <div class="column has-text-centered">
+              <div class="publication-links">
+                <!-- PDF Link. -->
+                <span class="link-block">
+                  <a href="./LPS.pdf" class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon">
+                      <i class="fas fa-file-pdf"></i>
+                    </span>
+                    <span>Paper</span>
+                  </a>
+                </span>
+                <span class="link-block">
+                  <a href="" class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon">
+                      <i class="ai ai-arxiv"></i>
+                    </span>
+                    <span>arXiv</span>
+                  </a>
+                </span>
+                <!-- Code Link. -->
+                <span class="link-block">
+                  <a href="" class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon">
+                      <i class="fab fa-github"></i>
+                    </span>
+                    <span>Code (Coming Soon!)</span>
+                  </a>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TL;DR + Abstract -->
+  <section class="section" style="padding-top: 0;">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-full-width">
+          <div class="tldr-container">
+            <h2 class="tldr-title">TL;DR: Robust, Tuning-Free Offline RL via Steering Latent Actor through One-step
+              Policy</h2>
+            <div class="tldr-video-container">
+              <video class="tldr-video" id="teaser" autoplay muted loop controls>
+                <source src="./static/videos/LPS_web.mp4" type="video/mp4">
+              </video>
+            </div>
+            <div class="column">
+              <h2 class="title is-4">Abstract</h2>
+              <div class="content has-text-justified">
+                <p>
+                  Offline reinforcement learning (RL) should be ideal for robotics, allowing learning from dataset
+                  without risky exploration.
+                  Yet, offline RL's performance often hinges on a brittle trade-off between (1) return maximization,
+                  which can push policies outside dataset support, and (2) behavioral constraints, which typically
+                  require sensitive hyperparameter tuning.
+                  Latent steering offers a structural way to stay within dataset support during RL but, in order to
+                  approximate action values, existing offline adaptations commonly rely on latent-space critics learned
+                  via indirect distillation, which can lose information and hinder convergence.
+                  We propose <b>Latent Policy Steering (LPS)</b>, which enables high-fidelity latent policy improvement
+                  by backpropagating original-action-space Q-gradients through a differentiable one-step MeanFlow policy
+                  to update a latent-action-space actor. By eliminating proxy latent critics, LPS allows an
+                  original-action-space critic to guide end-to-end latent-space optimization, while the one-step
+                  MeanFlow policy serves as a behavior-constrained generative prior. This decoupling yields a robust
+                  method that works out-of-the-box with minimal tuning. Across OGBench and real-world robotic tasks, LPS
+                  achieves state-of-the-art performance and consistently outperforms behavioral cloning and strong
+                  latent steering baselines.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- Limitations of Prior Works -->
+  <section class="section">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered has-text-centered">
+        <div class="column">
+          <h2 class="title is-3">Limitations of Prior Works</h2>
+          <div class="content has-text-justified">
+            <p>
+              Most state-of-the-art offline RL algorithms follow the <b>TD3+BC</b> paradigm, aiming to maximize return
+              while constraining the learned policy to dataset support by adding a regularization term weighted by
+              a hyperparameter α. This introduces a <i>delicate trade-off</i>: weak regularization leads to
+              out-of-distribution
+              actions and extrapolation error, while excessive regularization reduces offline RL to behavioral cloning.
+              Meanwhile, <b>latent steering</b> methods like DSRL resolve this trade-off structurally but require
+              learning
+              a latent-space critic via indirect distillation, which can be <i>lossy</i> and produce <i>inaccurate
+                gradients</i>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="container is-max-desktop">
+      <details>
+        <summary class="title is-5" style="cursor: pointer;">Click to expand details</summary>
+        <div class="columns" style="margin-top: 15px;">
+          <div class="column">
+            <div class="content">
+              <h3 class="title is-4">Behavioral constraint is too sensitive</h3>
+              <img src="./static/images/alpha_sensitivity.png" alt="Sensitivity to regularization weight alpha">
+              <p>
+                The way behavior-regularized offline RL methods balance value maximization and behavioral adherence
+                – using a weighting hyperparameter α – can be fragile even in simple settings.
+                Large α yields overly conservative policies, while small α encourages out-of-support actions.
+                The best α is highly sensitive to <b>reward scale</b>, <b>dataset diversity</b>, and <b>model
+                  capacity</b>,
+                making extensive hyperparameter sweeps feasible in simulation but prohibitively expensive and risky
+                with real-world robots.
+              </p>
+            </div>
+          </div>
+          <div class="column">
+            <div class="content">
+              <h3 class="title is-4">Latent-space critic is not enough</h3>
+              <img src="./static/images/latent_conflict.png" alt="Latent-space critic gradient mismatch">
+              <p>
+                Latent steering methods (e.g., DSRL) optimize latents by relying on a value function defined in the
+                latent space, typically obtained by <b>distilling</b> the action-space critic through a frozen decoder.
+                However, matching values does not guarantee that the latent gradients used for improvement are accurate.
+                Even when the distilled Q approximates values reasonably, its gradient direction
+                ∇<sub>z</sub>Q<sub>ϕ</sub>(s,z)
+                can <b>deviate substantially</b> from the gradient of the action-space critic, particularly near sharp
+                boundaries of the data manifold. Such gradient mismatch can lead to suboptimal latent updates and
+                degrade
+                purely-offline performance.
+              </p>
+            </div>
+          </div>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- Method: Latent Policy Steering -->
+  <section class="section">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered has-text-centered">
+        <div class="column">
+          <h2 class="title is-3">Latent Policy Steering (LPS)</h2>
+          <div class="content has-text-justified">
+            <p>
+              We propose <b>Latent Policy Steering (LPS)</b>, which addresses both limitations above.
+              First, LPS avoids the explicit behavior-regularization trade-off by <i>separating</i> reward
+              maximization and distributional constraints: a fixed generative behavior policy defines the support,
+              while a latent actor performs value-driven steering (resolving α-sensitivity).
+              Second, LPS <i>eliminates</i> proxy latent critics by directly backpropagating action-space critic
+              gradients through a differentiable generative base policy to update the latent actor (avoiding the
+              inaccurate latent critic).
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="columns is-centered">
+        <div class="column">
+          <div class="content">
+            <div class="method-box">
+              <h4 class="title is-5">1. Differentiable Base Policy via MeanFlow</h4>
+              <p>
+                The base policy π<sub>β</sub> defines the "safe manifold" of the dataset. LPS treats it as a
+                <b>differentiable mapping</b>, enabling backpropagation of gradients from the action-space critic
+                to the latent actor. We employ <b>MeanFlow</b>, which provides efficient one-step deterministic
+                generation via a simple ODE: <i>â = z − u<sub>β</sub>(z, 0, 1)</i>.
+                A <b>noise-to-action reformulation</b> directly predicts the denoised action rather than displacement,
+                improving numerical stability.
+              </p>
+            </div>
+
+            <div class="method-box">
+              <h4 class="title is-5">2. Spherical Latent Geometry</h4>
+              <p>
+                To prevent the "norm explosion" problem where latent actors increase |z| to query atypical regions
+                under the base policy prior, we leverage the <b>concentration of measure</b> property of
+                high-dimensional Gaussians. Both the base policy latent and the latent actor output are constrained
+                to the hypersphere S<sup>d−1</sup> with radius √d, keeping latent queries within the valid
+                coverage of the base policy while maintaining well-conditioned gradients.
+              </p>
+            </div>
+
+            <div class="method-box">
+              <h4 class="title is-5">3. Direct Latent Policy Steering</h4>
+              <p>
+                The latent actor π<sub>ϕ</sub> is optimized directly using the action-space critic Q<sub>θ</sub>:
+              </p>
+              <div class="equation-box">
+                ℒ<sub>LPS</sub> = −𝔼<sub>s∼D</sub>[Q<sub>θ</sub>(s, π<sub>β</sub>(s, π<sub>ϕ</sub>(s)))]
+              </div>
+              <p>
+                Gradients propagate through π<sub>β</sub> via the chain rule, yielding low-variance latent updates
+                <b>without introducing proxy Q(s,z)</b>. No explicit behavior-regularization coefficient α is needed:
+                behavioral constraints are enforced <i>structurally</i> by the fixed generative prior.
+              </p>
+            </div>
+
+            <div class="key-insight">
+              <strong>Key Insight:</strong> LPS structurally decouples behavioral constraints from reward
+              maximization—the fixed MeanFlow base policy confines output to the data manifold, while the latent
+              actor freely maximizes Q-value within that manifold. This eliminates the need for sensitive α tuning.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- Experiments -->
+  <section class="section">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered has-text-centered">
+        <div class="column">
+          <h2 class="title is-3">Experiments</h2>
+          <div class="content has-text-justified">
+            <p>
+              We evaluate LPS across <b>OGBench</b> manipulation tasks in simulation and <b>real-world robotic
+                manipulation</b> tasks on the DROID platform. All methods share the same Q-Chunking (QC) value-learning
+              backbone and differ only in policy extraction strategy.
+              We compare against: <b>QC-FQL</b> and <b>QC-MFQL</b> (action-space distillation baselines),
+              <b>DSRL</b> (latent steering with latent-space critic), and <b>CFGRL</b> (inference-time classifier-free
+              guidance).
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered has-text-centered">
+        <div class="column">
+          <h2 class="title is-4">Real-World (Franka)</h2>
+          <div class="content has-text-justified">
+            <p>
+              Our real-world experiments use the DROID platform with a Franka Research 3 robot across four manipulation
+              tasks: <i>pick-and-place carrots</i>, <i>eggplant to bin</i>, <i>plug in bulb</i>, and
+              <i>refill tape</i>. We collected 50 human-teleoperated demonstrations per task. Across all tasks,
+              <b>LPS achieves the highest success rates</b> and the best average performance (56.2%), outperforming
+              both behavioral cloning baselines (Flow-BC: 31.2%, MF-BC: 28.7%) and prior latent-steering methods
+              (DSRL: 35.0%). LPS is particularly effective on precision-critical tasks where DSRL struggles.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered has-text-centered">
+        <div class="column">
+          <h2 class="title is-4">Simulation (OGBench)</h2>
+          <div class="content has-text-justified">
+            <p>
+              We evaluate on five state-based manipulation tasks from OGBench
+              (<i>cube-single, cube-double, scene-sparse, puzzle-3x3-sparse, puzzle-4x4</i>)
+              and pixel-based visual task variants. <b>LPS consistently outperforms</b> the one-step distillation
+              baselines (QC-FQL and QC-MFQL). DSRL exhibits higher variance and performs poorly on the challenging
+              cube-double domain, highlighting the limitations of relying on a distilled latent-space critic.
+              CFGRL underperforms explicit policy extraction methods, suggesting that inference-time guidance alone
+              provides weaker improvement signals than direct critic-based optimization.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- Sensitivity Analysis -->
+  <section class="section">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <!-- 1st Column -->
+        <div class="column">
+          <div class="content">
+            <h3 class="title is-4">Robustness to α</h3>
+            <img src="./static/images/alpha_sensitivity.png" alt="Sensitivity to regularization weight"
+              style="width:90%; display: block; margin: auto;">
+            <p></p>
+            <p>
+              To evaluate robustness to behavior-regularization tuning, we sweep α on representative OGBench tasks.
+              QC-MFQL exhibits a sharp performance peak at a specific α, with success rates dropping rapidly when
+              α deviates from the task-specific optimum. In contrast, <b>LPS remains stable across a wide range
+                of α</b>, consistent with its design goal of decoupling policy improvement from explicit
+              behavior-regularization weights.
+            </p>
+          </div>
+        </div>
+        <!-- 2nd Column -->
+        <div class="column">
+          <div class="content">
+            <h3 class="title is-4">When BC Fails and How LPS Improves</h3>
+            <img src="./static/images/latent_conflict.png" alt="BC failure modes and LPS corrections"
+              style="width: 90%; display: block; margin: auto;">
+            <p>
+              Our dataset consists solely of successful trajectories, which are often suboptimal due to human
+              teleoperation artifacts like hesitation, micro-corrections, and jittery motions.
+              BC baselines frequently suffer from <b>premature release</b>, <b>repetitive motion loops</b>, and
+              <b>freezing during precision alignment</b>.
+              LPS effectively mitigates these issues by steering the latent policy toward high-value regions,
+              enabling the agent to execute decisive actions where BC would otherwise stall or oscillate.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- Ablation Study -->
+  <section class="section">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered has-text-centered">
+        <div class="column">
+          <h2 class="title is-4">Ablation Study</h2>
+          <div class="content has-text-justified">
+            <p>
+              We conduct comprehensive ablation studies to validate three key design choices in LPS:
+            </p>
+            <ul>
+              <li><b>Latent-space geometry:</b> Replacing the spherical prior with a standard normal or truncated normal
+                significantly reduces performance. Without a spherical constraint, latent optimization tends to increase
+                |z| (norm growth), pushing the actor into atypical regions. The spherical constraint prevents this norm
+                explosion and yields stable optimization.</li>
+              <li><b>One-step generative backbone:</b> Comparing against flow-matching variants shows that standard FM
+                vector fields incur large approximation errors under single-step integration, and multi-step
+                backpropagation
+                introduces additional instability. MeanFlow enables high-fidelity one-step generation and stable
+                end-to-end gradients.</li>
+              <li><b>Noise-to-action reformulation:</b> Training LPS with the original MeanFlow parameterization leads
+                to unstable learning, whereas the reformulated objective consistently yields strong performance,
+                highlighting the importance of grounding training in the action space.</li>
+            </ul>
+            <p>
+              Collectively, these findings provide strong evidence that every component of LPS is a meaningful
+              contributor to its overall performance.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- Contributions -->
+  <section class="section">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered has-text-centered">
+        <div class="column">
+          <h2 class="title is-4">Contributions</h2>
+        </div>
+      </div>
+      <div class="content">
+        <ol>
+          <li>
+            We identify two practical bottlenecks for real-world offline RL: the <b>sensitivity</b> induced by explicit
+            behavior regularization and the <b>approximation error</b> induced by indirect latent distillation
+            (e.g., noise aliasing).
+          </li>
+          <li>
+            We propose <b>Latent Policy Steering (LPS)</b>, which structurally decouples behavioral constraints from
+            reward maximization by enabling direct latent policy improvement via backpropagation through a
+            differentiable one-step generative model.
+          </li>
+          <li>
+            We demonstrate that LPS achieves <b>state-of-the-art performance</b> on OGBench and exhibits superior
+            practicality on real-world robotic manipulation, consistently outperforming behavioral cloning without
+            task-specific tuning.
+          </li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="BibTeX">
+    <div class="container is-max-desktop content">
+      <h2 class="title">BibTeX</h2>
+      <pre><code>@article{im2025lps,
+  title={Latent Policy Steering through One-Step Flow Policies},
+  author={Hokyun Im and Andrey Kolobov and Jianlong Fu and Youngwoon Lee},
+  year={2025},
+}</code></pre>
+    </div>
+  </section>
+
+
+  <footer class="footer">
+    <div class="container">
+      <div class="columns is-centered">
+        <div class="column is-8">
+          <div class="content">
+            <p style="text-align: center;">
+              We used template from <a href="https://nerfies.github.io/">Nerfies</a>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+
+</body>
+
+</html>
