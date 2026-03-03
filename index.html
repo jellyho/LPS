@@ -207,11 +207,11 @@
                 </span>
                 <!-- Code Link. -->
                 <span class="link-block">
-                  <a href="" class="external-link button is-normal is-rounded is-dark">
+                  <a href="https://github.com/jellyho/LPS" class="external-link button is-normal is-rounded is-dark">
                     <span class="icon">
                       <i class="fab fa-github"></i>
                     </span>
-                    <span>Code (Coming Soon!)</span>
+                    <span>Code</span>
                   </a>
                 </span>
               </div>
@@ -228,13 +228,8 @@
       <div class="columns is-centered has-text-centered">
         <div class="column is-full-width">
           <div class="tldr-container">
-            <h2 class="tldr-title">TL;DR: Robust, Tuning-Free Offline RL via Steering Latent Actor through One-step
-              Policy</h2>
-            <div class="tldr-video-container">
-              <video class="tldr-video" id="teaser" autoplay muted loop controls>
-                <source src="./static/videos/LPS_web.mp4" type="video/mp4">
-              </video>
-            </div>
+            <h2 class="tldr-title">TL;DR: Robust, Tuning-Free Offline RL — via direct Q-gradient backprop through a
+              one-step flow policy, eliminating both proxy latent critics and brittle α tuning.</h2>
             <div class="column">
               <h2 class="title is-4">Abstract</h2>
               <div class="content has-text-justified">
@@ -293,34 +288,32 @@
         <summary class="title is-5" style="cursor: pointer;">Click to expand details</summary>
         <div class="columns" style="margin-top: 15px;">
           <div class="column">
-            <div class="content">
+            <div class="content has-text-justified">
               <h3 class="title is-4">Behavioral constraint is too sensitive</h3>
+              <img src="./static/images/QCFQL.png" alt="QCFQL">
               <img src="./static/images/alpha_sensitivity.png" alt="Sensitivity to regularization weight alpha">
               <p>
                 The way behavior-regularized offline RL methods balance value maximization and behavioral adherence
                 – using a weighting hyperparameter α – can be fragile even in simple settings.
                 Large α yields overly conservative policies, while small α encourages out-of-support actions.
                 The best α is highly sensitive to <b>reward scale</b>, <b>dataset diversity</b>, and <b>model
-                  capacity</b>,
-                making extensive hyperparameter sweeps feasible in simulation but prohibitively expensive and risky
-                with real-world robots.
+                  capacity</b>, making extensive hyperparameter sweeps feasible in simulation but prohibitively
+                expensive and risky with real-world robots.
               </p>
             </div>
           </div>
           <div class="column">
-            <div class="content">
+            <div class="content has-text-justified">
               <h3 class="title is-4">Latent-space critic is not enough</h3>
+              <img src="./static/images/DSRL.png" alt="DSRL">
               <img src="./static/images/latent_conflict.png" alt="Latent-space critic gradient mismatch">
               <p>
-                Latent steering methods (e.g., DSRL) optimize latents by relying on a value function defined in the
-                latent space, typically obtained by <b>distilling</b> the action-space critic through a frozen decoder.
-                However, matching values does not guarantee that the latent gradients used for improvement are accurate.
+                Latent steering methods (e.g., DSRL) optimize latents via a value function in the latent space,
+                typically obtained by <b>distilling</b> the action-space critic through a frozen decoder.
+                However, matching values does not guarantee accurate latent gradients.
                 Even when the distilled Q approximates values reasonably, its gradient direction
-                ∇<sub>z</sub>Q<sub>ϕ</sub>(s,z)
-                can <b>deviate substantially</b> from the gradient of the action-space critic, particularly near sharp
-                boundaries of the data manifold. Such gradient mismatch can lead to suboptimal latent updates and
-                degrade
-                purely-offline performance.
+                ∇<sub>z</sub>Q<sub>ϕ</sub>(s,z) can <b>deviate substantially</b> from the action-space critic's
+                gradient near sharp boundaries of the data manifold, leading to suboptimal latent updates.
               </p>
             </div>
           </div>
@@ -337,6 +330,11 @@
       <div class="columns is-centered has-text-centered">
         <div class="column">
           <h2 class="title is-3">Latent Policy Steering (LPS)</h2>
+          <div class="tldr-video-container">
+            <video class="tldr-video" id="teaser" autoplay muted loop controls>
+              <source src="./static/videos/LPS_web.mp4" type="video/mp4">
+            </video>
+          </div>
           <div class="content has-text-justified">
             <p>
               We propose <b>Latent Policy Steering (LPS)</b>, which addresses both limitations above.
@@ -431,6 +429,9 @@
       <div class="columns is-centered has-text-centered">
         <div class="column">
           <h2 class="title is-4">Real-World (Franka)</h2>
+          <img src="./static/images/real_exp.png" alt="Real-World" style="width: 80%; display: block; margin: auto;">
+          <img src="./static/images/real_world_plot.png" alt="Real-World Plot"
+            style="width: 80%; display: block; margin: auto;">
           <div class="content has-text-justified">
             <p>
               Our real-world experiments use the DROID platform with a Franka Research 3 robot across four manipulation
@@ -446,11 +447,204 @@
     </div>
   </section>
 
+  <section class="section" style="padding-top: 0;">
+    <div class="container is-max-desktop">
+      <details>
+        <summary class="title is-5" style="cursor: pointer; text-align: center;">Click to see rollout videos
+        </summary>
+        <div style="margin-top: 24px;">
+
+          <style>
+            .video-block {
+              margin-bottom: 28px;
+            }
+
+            .video-block .task-title {
+              font-size: 1rem;
+              font-weight: 700;
+              border-left: 4px solid #495057;
+              padding-left: 10px;
+              margin-bottom: 10px;
+            }
+
+            .video-row {
+              display: grid;
+              grid-template-columns: repeat(4, 1fr);
+              gap: 12px;
+            }
+
+            @media (max-width: 540px) {
+              .video-row {
+                grid-template-columns: repeat(2, 1fr);
+              }
+            }
+
+            .video-card {
+              text-align: center;
+              min-height: 100px;
+              /* 로딩 전 최소 높이 확보 */
+            }
+
+            .video-card .baseline-label {
+              font-size: 0.78rem;
+              font-weight: 600;
+              color: #555;
+              margin-bottom: 6px;
+              text-transform: uppercase;
+              letter-spacing: 0.04em;
+            }
+
+            .video-card.lps-card .baseline-label {
+              color: #2c6fad;
+            }
+
+            .video-card video {
+              width: 100%;
+              border-radius: 6px;
+              display: block;
+              aspect-ratio: 16 / 9;
+              /* 비디오 비율 강제 (보통 16:9) */
+              background-color: #f0f0f0;
+              /* 로딩 전 배경색 */
+              box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+            }
+          </style>
+
+          <!-- Task 1: Pick & Place Carrots -->
+          <div class="video-block">
+            <p class="task-title">Pick &amp; Place Carrots</p>
+            <div class="video-row">
+              <div class="video-card">
+                <p class="baseline-label">Flow-BC</p>
+                <video class="tldr-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="./static/videos/carrots_flow_bc.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video-card">
+                <p class="baseline-label">MF-BC</p>
+                <video class="tldr-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="./static/videos/carrots_mf_bc.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video-card">
+                <p class="baseline-label">DSRL</p>
+                <video class="tldr-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="./static/videos/carrots_dsrl.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video-card lps-card">
+                <p class="baseline-label">LPS (Ours)</p>
+                <video class="tldr-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="./static/videos/carrots_lps.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </div>
+
+          <!-- Task 2: Eggplant to Bin -->
+          <div class="video-block">
+            <p class="task-title">Eggplant to Bin</p>
+            <div class="video-row">
+              <div class="video-card">
+                <p class="baseline-label">Flow-BC</p>
+                <video class="tldr-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="./static/videos/eggplant_flow_bc.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video-card">
+                <p class="baseline-label">MF-BC</p>
+                <video class="tldr-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="./static/videos/eggplant_mf_bc.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video-card">
+                <p class="baseline-label">DSRL</p>
+                <video class="tldr-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="./static/videos/eggplant_dsrl.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video-card lps-card">
+                <p class="baseline-label">LPS (Ours)</p>
+                <video class="tldr-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="./static/videos/eggplant_lps.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </div>
+
+          <!-- Task 3: Plug in Bulb -->
+          <div class="video-block">
+            <p class="task-title">Plug in Bulb</p>
+            <div class="video-row">
+              <div class="video-card">
+                <p class="baseline-label">Flow-BC</p>
+                <video class="tldr-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="./static/videos/bulb_flow_bc.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video-card">
+                <p class="baseline-label">MF-BC</p>
+                <video class="tldr-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="./static/videos/bulb_mf_bc.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video-card">
+                <p class="baseline-label">DSRL</p>
+                <video class="tldr-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="./static/videos/bulb_dsrl.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video-card lps-card">
+                <p class="baseline-label">LPS (Ours)</p>
+                <video class="tldr-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="./static/videos/bulb_lps.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </div>
+
+          <!-- Task 4: Refill Tape -->
+          <div class="video-block">
+            <p class="task-title">Refill Tape</p>
+            <div class="video-row">
+              <div class="video-card">
+                <p class="baseline-label">Flow-BC</p>
+                <video class="tldr-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="./static/videos/tape_flow_bc.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video-card">
+                <p class="baseline-label">MF-BC</p>
+                <video class="tldr-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="./static/videos/tape_mf_bc.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video-card">
+                <p class="baseline-label">DSRL</p>
+                <video class="tldr-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="./static/videos/tape_dsrl.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video-card lps-card">
+                <p class="baseline-label">LPS (Ours)</p>
+                <video class="tldr-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="./static/videos/tape_lps.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </details>
+    </div>
+  </section>
+
   <section class="section">
     <div class="container is-max-desktop">
       <div class="columns is-centered has-text-centered">
         <div class="column">
           <h2 class="title is-4">Simulation (OGBench)</h2>
+          <img src="./static/images/OGBench_plot.png" alt="OGBench Plot">
           <div class="content has-text-justified">
             <p>
               We evaluate on five state-based manipulation tasks from OGBench
@@ -475,13 +669,12 @@
       <div class="columns is-centered">
         <!-- 1st Column -->
         <div class="column">
-          <div class="content">
+          <div class="content has-text-justified">
             <h3 class="title is-4">Robustness to α</h3>
-            <img src="./static/images/alpha_sensitivity.png" alt="Sensitivity to regularization weight"
-              style="width:90%; display: block; margin: auto;">
-            <p></p>
+            <img src="./static/images/alpha.png" alt="Sensitivity to regularization weight"
+              style="width:100%; display: block; margin: auto;">
             <p>
-              To evaluate robustness to behavior-regularization tuning, we sweep α on representative OGBench tasks.
+              Measured on <b>simulation (OGBench)</b> tasks, we sweep α on representative manipulation benchmarks.
               QC-MFQL exhibits a sharp performance peak at a specific α, with success rates dropping rapidly when
               α deviates from the task-specific optimum. In contrast, <b>LPS remains stable across a wide range
                 of α</b>, consistent with its design goal of decoupling policy improvement from explicit
@@ -491,17 +684,16 @@
         </div>
         <!-- 2nd Column -->
         <div class="column">
-          <div class="content">
-            <h3 class="title is-4">When BC Fails and How LPS Improves</h3>
-            <img src="./static/images/latent_conflict.png" alt="BC failure modes and LPS corrections"
-              style="width: 90%; display: block; margin: auto;">
+          <div class="content has-text-justified">
+            <h3 class="title is-4">Computational Efficiency</h3>
+            <img src="./static/images/compute.png" alt="Computational cost comparison"
+              style="width: 100%; display: block; margin-bottom:8%;">
             <p>
-              Our dataset consists solely of successful trajectories, which are often suboptimal due to human
-              teleoperation artifacts like hesitation, micro-corrections, and jittery motions.
-              BC baselines frequently suffer from <b>premature release</b>, <b>repetitive motion loops</b>, and
-              <b>freezing during precision alignment</b>.
-              LPS effectively mitigates these issues by steering the latent policy toward high-value regions,
-              enabling the agent to execute decisive actions where BC would otherwise stall or oscillate.
+              Measured on our <b>real-world (Franka)</b> setup, LPS generates actions in a
+              <b>single forward pass</b> via MeanFlow, unlike multi-step diffusion policies that require dozens of
+              denoising steps. This one-step design also enables <b>stable end-to-end gradient backpropagation</b>
+              without the instability of unrolling multi-step ODE solvers, achieving strong real-world performance
+              with substantially lower per-step compute.
             </p>
           </div>
         </div>
@@ -517,14 +709,19 @@
       <div class="columns is-centered has-text-centered">
         <div class="column">
           <h2 class="title is-4">Ablation Study</h2>
+          <img src="./static/images/ablation_merged.png" alt="ablation merged">
           <div class="content has-text-justified">
             <p>
-              We conduct comprehensive ablation studies to validate three key design choices in LPS:
+              Using <b>simulation (OGBench)</b> tasks, we conduct comprehensive ablation studies to validate three key
+              design choices in LPS:
             </p>
             <ul>
-              <li><b>Latent-space geometry:</b> Replacing the spherical prior with a standard normal or truncated normal
-                significantly reduces performance. Without a spherical constraint, latent optimization tends to increase
-                |z| (norm growth), pushing the actor into atypical regions. The spherical constraint prevents this norm
+              <li><b>Latent-space geometry:</b> Replacing the spherical prior with a standard normal or truncated
+                normal
+                significantly reduces performance. Without a spherical constraint, latent optimization tends to
+                increase
+                |z| (norm growth), pushing the actor into atypical regions. The spherical constraint prevents this
+                norm
                 explosion and yields stable optimization.</li>
               <li><b>One-step generative backbone:</b> Comparing against flow-matching variants shows that standard FM
                 vector fields incur large approximation errors under single-step integration, and multi-step
@@ -558,7 +755,8 @@
       <div class="content">
         <ol>
           <li>
-            We identify two practical bottlenecks for real-world offline RL: the <b>sensitivity</b> induced by explicit
+            We identify two practical bottlenecks for real-world offline RL: the <b>sensitivity</b> induced by
+            explicit
             behavior regularization and the <b>approximation error</b> induced by indirect latent distillation
             (e.g., noise aliasing).
           </li>
