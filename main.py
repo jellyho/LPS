@@ -12,7 +12,6 @@ from ml_collections import config_flags
 
 from utils.log_utils import setup_wandb, get_exp_name, get_flag_dict
 from envs.env_utils import make_env_and_datasets
-from envs.ogbench_utils import make_ogbench_env_and_datasets
 from utils.flax_utils import save_agent, save_example_batch, print_param_stats, print_batch_shapes
 from utils.datasets import Dataset, ReplayBuffer
 from agents import agents
@@ -107,27 +106,13 @@ def main(_):
     config.training_steps=FLAGS.offline_steps
     
     # Data loading
-    if FLAGS.ogbench_dataset_dir is not None:
-        # custom ogbench dataset
-        assert FLAGS.dataset_replace_interval != 0
-        assert FLAGS.dataset_proportion == 1.0
-        dataset_idx = 0
-        dataset_paths = [
-            file for file in sorted(glob.glob(f"{FLAGS.ogbench_dataset_dir}/*.npz")) if '-val.npz' not in file
-        ]
-        env, eval_env, train_dataset, val_dataset = make_ogbench_env_and_datasets(
-            FLAGS.env_name,
-            dataset_path=dataset_paths[dataset_idx],
-            compact_dataset=False,
-        )
-    else:
-        env, eval_env, train_dataset, val_dataset = make_env_and_datasets(
-            FLAGS.env_name, 
-            droid_dir=FLAGS.droid_dataset_dir,
-            droid_use_failure=FLAGS.droid_use_failure,
-            sparse=FLAGS.sparse,
-            horizon_length=FLAGS.horizon_length,
-        )
+    env, eval_env, train_dataset, val_dataset = make_env_and_datasets(
+        FLAGS.env_name, 
+        droid_dir=FLAGS.droid_dataset_dir,
+        droid_use_failure=FLAGS.droid_use_failure,
+        sparse=FLAGS.sparse,
+        horizon_length=FLAGS.horizon_length,
+    )
 
     # Set seeds
     random.seed(FLAGS.seed)

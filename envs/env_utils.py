@@ -4,9 +4,7 @@ import time
 
 import gymnasium
 import numpy as np
-import ogbench
 from gymnasium.spaces import Box
-
 from utils.datasets import Dataset
 
 
@@ -108,6 +106,7 @@ def make_env_and_datasets(env_name, frame_stack=None, action_clip_eps=1e-5, droi
         env, eval_env, val_dataset = None, None, None
     elif 'singletask' in env_name:
         # OGBench.
+        import ogbench
         env, train_dataset, val_dataset = ogbench.make_env_and_datasets(env_name)
         eval_env = ogbench.make_env_and_datasets(env_name, env_only=True)
         env = EpisodeMonitor(env, filter_regexes=['.*privileged.*', '.*proprio.*'])

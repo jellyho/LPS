@@ -39,6 +39,7 @@ pip install -r requirements.txt
 conda create -n lps_droid python=3.10
 
 git clone https://github.com/jellyho/droid.git
+cd droid
 git submodule sync
 git submodule update --init --recursive
 ```
