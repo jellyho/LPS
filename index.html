@@ -234,14 +234,13 @@
               <h2 class="title is-4">Abstract</h2>
               <div class="content has-text-justified">
                 <p>
-                  Offline reinforcement learning (RL) should be ideal for robotics, allowing learning from dataset
-                  without risky exploration.
-                  Yet, offline RL's performance often hinges on a brittle trade-off between (1) return maximization,
-                  which can push policies outside dataset support, and (2) behavioral constraints, which typically
-                  require sensitive hyperparameter tuning.
-                  Latent steering offers a structural way to stay within dataset support during RL but, in order to
-                  approximate action values, existing offline adaptations commonly rely on latent-space critics learned
-                  via indirect distillation, which can lose information and hinder convergence.
+                  Offline reinforcement learning (RL) allows robots to learn from offline datasets without risky
+                  exploration. Yet, offline RL's performance often hinges on a brittle trade-off between
+                  (1) return maximization, which can push policies outside the dataset support, and
+                  (2) behavioral constraints, which typically require sensitive hyperparameter tuning.
+                  Latent steering offers a structural way to stay within the dataset support during RL,
+                  but existing offline adaptations commonly approximate action values using latent-space critics
+                  learned via indirect distillation, which can lose information and hinder convergence.
                   We propose <b>Latent Policy Steering (LPS)</b>, which enables high-fidelity latent policy improvement
                   by backpropagating original-action-space Q-gradients through a differentiable one-step MeanFlow policy
                   to update a latent-action-space actor. By eliminating proxy latent critics, LPS allows an
@@ -269,15 +268,10 @@
           <h2 class="title is-3">Limitations of Prior Works</h2>
           <div class="content has-text-justified">
             <p>
-              Most state-of-the-art offline RL algorithms follow the <b>TD3+BC</b> paradigm, aiming to maximize return
-              while constraining the learned policy to dataset support by adding a regularization term weighted by
-              a hyperparameter α. This introduces a <i>delicate trade-off</i>: weak regularization leads to
-              out-of-distribution
-              actions and extrapolation error, while excessive regularization reduces offline RL to behavioral cloning.
-              Meanwhile, <b>latent steering</b> methods like DSRL resolve this trade-off structurally but require
-              learning
-              a latent-space critic via indirect distillation, which can be <i>lossy</i> and produce <i>inaccurate
-                gradients</i>.
+              Standard offline RL methods (e.g., <b>TD3+BC</b>) rely on a sensitive hyperparameter α to balance
+              return maximization and behavioral constraints.
+              <b>Latent steering</b> methods like DSRL avoid this but require a distilled latent-space critic,
+              which can be <i>lossy</i> and produce <i>inaccurate gradients</i>.
             </p>
           </div>
         </div>
@@ -293,12 +287,9 @@
               <img src="./static/images/QCFQL.png" alt="QCFQL">
               <img src="./static/images/alpha_sensitivity.png" alt="Sensitivity to regularization weight alpha">
               <p>
-                The way behavior-regularized offline RL methods balance value maximization and behavioral adherence
-                – using a weighting hyperparameter α – can be fragile even in simple settings.
                 Large α yields overly conservative policies, while small α encourages out-of-support actions.
                 The best α is highly sensitive to <b>reward scale</b>, <b>dataset diversity</b>, and <b>model
-                  capacity</b>, making extensive hyperparameter sweeps feasible in simulation but prohibitively
-                expensive and risky with real-world robots.
+                  capacity</b>.
               </p>
             </div>
           </div>
@@ -308,12 +299,9 @@
               <img src="./static/images/DSRL.png" alt="DSRL">
               <img src="./static/images/latent_conflict.png" alt="Latent-space critic gradient mismatch">
               <p>
-                Latent steering methods (e.g., DSRL) optimize latents via a value function in the latent space,
-                typically obtained by <b>distilling</b> the action-space critic through a frozen decoder.
-                However, matching values does not guarantee accurate latent gradients.
-                Even when the distilled Q approximates values reasonably, its gradient direction
-                ∇<sub>z</sub>Q<sub>ϕ</sub>(s,z) can <b>deviate substantially</b> from the action-space critic's
-                gradient near sharp boundaries of the data manifold, leading to suboptimal latent updates.
+                Even when a distilled latent Q approximates values well, its gradient
+                ∇<sub>z</sub>Q<sub>ϕ</sub>(s,z) can <b>deviate substantially</b> from the true action-space
+                critic gradient, leading to suboptimal latent updates.
               </p>
             </div>
           </div>
@@ -355,38 +343,27 @@
             <div class="method-box">
               <h4 class="title is-5">1. Differentiable Base Policy via MeanFlow</h4>
               <p>
-                The base policy π<sub>β</sub> defines the "safe manifold" of the dataset. LPS treats it as a
-                <b>differentiable mapping</b>, enabling backpropagation of gradients from the action-space critic
-                to the latent actor. We employ <b>MeanFlow</b>, which provides efficient one-step deterministic
-                generation via a simple ODE: <i>â = z − u<sub>β</sub>(z, 0, 1)</i>.
-                A <b>noise-to-action reformulation</b> directly predicts the denoised action rather than displacement,
-                improving numerical stability.
+                We employ <b>MeanFlow</b> as a differentiable one-step generative base policy,
+                enabling direct gradient flow from the action-space critic to the latent actor.
               </p>
             </div>
 
             <div class="method-box">
               <h4 class="title is-5">2. Spherical Latent Geometry</h4>
               <p>
-                To prevent the "norm explosion" problem where latent actors increase |z| to query atypical regions
-                under the base policy prior, we leverage the <b>concentration of measure</b> property of
-                high-dimensional Gaussians. Both the base policy latent and the latent actor output are constrained
-                to the hypersphere S<sup>d−1</sup> with radius √d, keeping latent queries within the valid
-                coverage of the base policy while maintaining well-conditioned gradients.
+                Both the base policy and latent actor operate on S<sup>d−1</sup> (radius √d),
+                preventing norm explosion and keeping latent queries within valid coverage.
               </p>
             </div>
 
             <div class="method-box">
               <h4 class="title is-5">3. Direct Latent Policy Steering</h4>
-              <p>
-                The latent actor π<sub>ϕ</sub> is optimized directly using the action-space critic Q<sub>θ</sub>:
-              </p>
               <div class="equation-box">
                 ℒ<sub>LPS</sub> = −𝔼<sub>s∼D</sub>[Q<sub>θ</sub>(s, π<sub>β</sub>(s, π<sub>ϕ</sub>(s)))]
               </div>
               <p>
-                Gradients propagate through π<sub>β</sub> via the chain rule, yielding low-variance latent updates
-                <b>without introducing proxy Q(s,z)</b>. No explicit behavior-regularization coefficient α is needed:
-                behavioral constraints are enforced <i>structurally</i> by the fixed generative prior.
+                Gradients from Q<sub>θ</sub> propagate through π<sub>β</sub> to π<sub>ϕ</sub>
+                — no proxy latent critic, no α tuning needed.
               </p>
             </div>
 
@@ -717,64 +694,26 @@
               design choices in LPS:
             </p>
             <ul>
-              <li><b>Latent-space geometry:</b> Replacing the spherical prior with a standard normal or truncated
-                normal
-                significantly reduces performance. Without a spherical constraint, latent optimization tends to
-                increase
-                |z| (norm growth), pushing the actor into atypical regions. The spherical constraint prevents this
-                norm
-                explosion and yields stable optimization.</li>
-              <li><b>One-step generative backbone:</b> Comparing against flow-matching variants shows that standard FM
-                vector fields incur large approximation errors under single-step integration, and multi-step
-                backpropagation
-                introduces additional instability. MeanFlow enables high-fidelity one-step generation and stable
-                end-to-end gradients.</li>
-              <li><b>Noise-to-action reformulation:</b> Training LPS with the original MeanFlow parameterization leads
-                to unstable learning, whereas the reformulated objective consistently yields strong performance,
-                highlighting the importance of grounding training in the action space.</li>
+              <li><b>Latent-space geometry (a–c):</b> The spherical prior does not degrade baseline performance
+                (a), confirming it retains sufficient expressivity. However, for LPS, it is critical:
+                both normal and truncated-normal alternatives significantly reduce performance (b),
+                as unconstrained latents exhibit norm growth that pushes the actor out of support,
+                while truncated latents saturate near boundaries where gradients vanish (c).</li>
+              <li><b>One-step generative backbone (d):</b> FM-1step-LPS (single Euler step) performs worst due to
+                large approximation errors; FM-LPS (10-step) improves but still underperforms LPS, as
+                backpropagation through multi-step sampling (BPTT) introduces instability.
+                MeanFlow enables high-fidelity one-step generation with stable end-to-end gradients.</li>
+              <li><b>Noise-to-action reformulation (e):</b> The original MeanFlow parameterization leads to
+                unstable learning. Our reformulation—predicting denoised actions rather than raw velocity
+                fields—consistently yields strong performance.</li>
             </ul>
-            <p>
-              Collectively, these findings provide strong evidence that every component of LPS is a meaningful
-              contributor to its overall performance.
-            </p>
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <hr />
 
-  <!-- Contributions -->
-  <section class="section">
-    <div class="container is-max-desktop">
-      <div class="columns is-centered has-text-centered">
-        <div class="column">
-          <h2 class="title is-4">Contributions</h2>
-        </div>
-      </div>
-      <div class="content">
-        <ol>
-          <li>
-            We identify two practical bottlenecks for real-world offline RL: the <b>sensitivity</b> induced by
-            explicit
-            behavior regularization and the <b>approximation error</b> induced by indirect latent distillation
-            (e.g., noise aliasing).
-          </li>
-          <li>
-            We propose <b>Latent Policy Steering (LPS)</b>, which structurally decouples behavioral constraints from
-            reward maximization by enabling direct latent policy improvement via backpropagation through a
-            differentiable one-step generative model.
-          </li>
-          <li>
-            We demonstrate that LPS achieves <b>state-of-the-art performance</b> on OGBench and exhibits superior
-            practicality on real-world robotic manipulation, consistently outperforming behavioral cloning without
-            task-specific tuning.
-          </li>
-        </ol>
-      </div>
-    </div>
-  </section>
 
   <section class="section" id="BibTeX">
     <div class="container is-max-desktop content">
