@@ -155,12 +155,6 @@ def main(_):
                 **{k: v[:new_size] for k, v in dataset.items()}
             )
         
-        if is_robomimic_env(FLAGS.env_name):
-            penalty_rewards = dataset["rewards"] - 1.0
-            ds_dict = {k: v for k, v in dataset.items()}
-            ds_dict["rewards"] = penalty_rewards
-            dataset = Dataset.create(**ds_dict)
-        
         if "puzzle-3x3" in FLAGS.task_name or "scene" in FLAGS.task_name:
             # Create a new dataset with modified rewards instead of trying to modify the frozen one
             sparse_rewards = (dataset["rewards"] != 0.0) * -1.0

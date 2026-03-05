@@ -29,8 +29,25 @@
 
 ## Installation
 ```bash
+# For OGBench Experiments
 conda create -n lps python=3.10
 pip install -r requirements.txt
+```
+
+```bash
+# For DROID Experiments
+conda create -n lps_droid python=3.10
+
+git clone https://github.com/jellyho/droid.git
+git submodule sync
+git submodule update --init --recursive
+```
+
+Follow the [instruction](https://droid-dataset.github.io/droid/software-setup/host-installation.html#configuring-the-laptopworkstation) to install DROID.
+
+```bash
+# Install LPS for DROID
+pip install -r requirements_droid.txt
 ```
 
 
