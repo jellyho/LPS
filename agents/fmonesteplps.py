@@ -424,7 +424,7 @@ def get_config():
             use_fourier_features=False,
             fourier_feature_dim=64,
             weight_decay=0.,
-            latent_dist='uniform',
+            latent_dist='sphere',
             # unused
             extract_method='ddpg', # 'ddpg', 'awr',,
             mf_method='unused',

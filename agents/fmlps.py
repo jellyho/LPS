@@ -454,7 +454,7 @@ def get_config():
             use_fourier_features=False,
             fourier_feature_dim=64,
             weight_decay=0.,
-            latent_dist='uniform',
+            latent_dist='sphere',
             use_DiT=False,
             size_DiT='base',
             training_steps=1000000,
