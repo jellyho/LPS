@@ -4,7 +4,7 @@
 
 </div>
 
-[![Static Badge](https://img.shields.io/badge/arXiv-2600.0000-red)]()
+[![Static Badge](https://img.shields.io/badge/arXiv-2603.05296-red)](https://arxiv.org/abs/2603.05296)
 [![Static Badge](https://img.shields.io/badge/🤗-Datasets-yellow)](https://huggingface.co/collections/jellyho/droid-dataset)
 [![Static Badge](https://img.shields.io/badge/🌍-Project_Page-blue)](https://jellyho.github.io/LPS/)
 ![Static Badge](https://img.shields.io/badge/Python-3.10-green)
@@ -13,7 +13,7 @@
 
 ## 📰 News
 - [2026/03/07] We release the code of LPS.
-- [2026/03/07] [LPS]() is now on arXiv.
+- [2026/03/06] [LPS](https://arxiv.org/abs/2603.05296) is now on arXiv.
 
 <hr />
 
@@ -27,16 +27,23 @@
 ## Overview
 **Latent Policy Steering (LPS)** is a robust offline reinforcement learning framework for robotics that resolves the brittle trade-off between return maximization and behavioral constraints. Instead of relying on lossy proxy latent critics, LPS directly optimizes a latent-action-space actor by backpropagating original-action-space Q-gradients through a differentiable one-step MeanFlow policy. This architecture allows the original critic to guide end-to-end optimization without proxy networks, while the MeanFlow policy serves as a strong generative prior. As a result, LPS works out-of-the-box with minimal tuning, achieving state-of-the-art performance across OGBench and real-world robotic tasks.
 
-## Installation
+## Installation - OGBench
 ```bash
 # For OGBench Experiments
 conda create -n lps python=3.10
 pip install -r requirements.txt
 ```
 
+## Installation - DROID
+
+Due to the mujoco-related version conflict, we need to use a separate python environment for DROID training / inference.
+
 ```bash
 # For DROID Experiments
 conda create -n lps_droid python=3.10
+
+# Install LPS for DROID
+pip install -r requirements_droid.txt
 
 git clone https://github.com/jellyho/droid.git
 cd droid
@@ -46,11 +53,7 @@ git submodule update --init --recursive
 
 Follow the [instruction](https://droid-dataset.github.io/droid/software-setup/host-installation.html#configuring-the-laptopworkstation) to install DROID.
 
-```bash
-# Install LPS for DROID
-pip install -r requirements_droid.txt
-```
-
+Make sure you set the server-side DROID setup ready.
 
 ## OGBench Simulation
 
@@ -69,7 +72,7 @@ sh lps_ogbench.sh puzzle-4x4-play 1 100
 
 ### Collect the data (hdf5 format)
 
-Follow the [instruction](https://droid-dataset.github.io/droid/example-workflows/teleoperation.html) of DROID to collect demonstration as hdf5 format.
+Run droid_teleop.py collect demonstration as hdf5 format.
 
 We assume that the dataset saved as
 
