@@ -7,6 +7,8 @@ wandb/
 # C extensions
 *.so
 envs/
+eval_logs/
+exp/
 # Distribution / packaging
 .Python
 build/
