@@ -147,11 +147,8 @@ def main(_):
             ds_dict["rewards"] = sparse_rewards
             dataset = Dataset.create(**ds_dict)
 
-        dataset.actor_action_sequence = ( FLAGS.horizon_length )
-        dataset.critic_action_sequence = ( FLAGS.horizon_length )
-        dataset.nstep = 1 # Actually N step
+        dataset.action_sequence = FLAGS.horizon_length
         dataset.discount = FLAGS.discount
-        dataset.discount2 = FLAGS.discount
         dataset.p_aug = FLAGS.p_aug
         return dataset
     

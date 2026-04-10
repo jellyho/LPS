@@ -58,22 +58,15 @@ class Dataset(FrozenDict):
         self.frame_stack = None  # Number of frames to stack; set outside the class.
         self.p_aug = None  # Image augmentation probability; set outside the class.
         self.return_next_actions = False  # Whether to additionally return next actions; set outside the class.
-        self.brc_normalize_rewards = False  # Whether to normalize rewards according to brc paper.
-        self.v_max = None  # Maximum value of the reward; set outside the class.
-        self.actor_action_sequence = 1  # Actor action sequence; set outside the class. Used for outputting action sequence.
-        self.critic_action_sequence = 1  # Critic action sequence; set outside the class. Used for options framework.
-        self.nstep = 1  # Number of steps for n-step return; set outside the class.
+        self.action_sequence = 1  # Action sequence length; set outside the class.
         self.discount = 1.0  # Discount factor; set outside the class.
-        self.discount2 = 1.0  # Discount factor for actor; set outside the class.
 
         self.terminal_locs = np.nonzero(self['terminals'] > 0)[0]
         if len(self.terminal_locs) == 0:
             self.terminal_locs = np.array([self.size - 1])
         self.initial_locs = np.concatenate([[0], self.terminal_locs[:-1] + 1])
 
-        self._raw_rtgs = None
         self._valid_indices = None
-        self._stats = None
 
     def update_locs(self):
         self._valid_indices = None
@@ -84,13 +77,12 @@ class Dataset(FrozenDict):
 
     @property
     def valid_indices(self):
-        """Get valid indices."""
+        """Get valid indices that won't cross episode boundaries."""
         if self._valid_indices is None:
             valid_indices = []
             for start, end in zip(self.initial_locs, np.append(self.terminal_locs, self.size)):
                 traj_len = end - start + 1
-                valid_end = start + max(0, traj_len - (self.actor_action_sequence * self.nstep - 1))
-                # print(traj_len, valid_end, start)
+                valid_end = start + max(0, traj_len - (self.action_sequence - 1))
                 if valid_end > start:
                     valid_indices.extend(range(start, valid_end))
             self._valid_indices = np.array(valid_indices)
@@ -111,42 +103,32 @@ class Dataset(FrozenDict):
             idxs = self.get_random_idxs(batch_size)
         batch = self.get_subset(idxs)
 
-        if (self.nstep > 1 or self.critic_action_sequence > 1) and self._dict.get('rewards') is not None:
+        if self.action_sequence > 1 and self._dict.get('rewards') is not None:
             # Find next episode start for each idx to avoid crossing episode boundaries
             search_idxs = np.searchsorted(self.terminal_locs, idxs)
-            # Clip search_idxs to valid range before indexing terminal_locs
             clipped_search_idxs = np.minimum(search_idxs, len(self.terminal_locs) - 1)
             next_episode_starts = np.where(
                 search_idxs < len(self.terminal_locs), self.terminal_locs[clipped_search_idxs], self.size - 1
             )
 
-            # Double loop case - outer nstep, inner action_sequence
-            outer_indices = np.arange(self.nstep)[None, :, None]  # [1, nstep, 1]
-            inner_indices = np.arange(self.critic_action_sequence)[None, None, :]  # [1, 1, action_sequence]
-            idxs_expanded = np.expand_dims(idxs, (1, 2))  # [batch, 1, 1]
-
-            # Combined indices for both loops [batch, nstep, action_sequence]
-            seq_indices = idxs_expanded + (outer_indices * self.critic_action_sequence) + inner_indices
-            seq_indices = np.minimum(seq_indices, np.expand_dims(next_episode_starts, (1, 2)))
+            # Create sequence indices [batch, action_sequence]
+            seq_offsets = np.arange(self.action_sequence)[None, :]  # [1, action_sequence]
+            seq_indices = idxs[:, None] + seq_offsets  # [batch, action_sequence]
+            seq_indices = np.minimum(seq_indices, next_episode_starts[:, None])
 
             # Get rewards and masks for all steps
-            rewards = self._dict['rewards'][seq_indices]  # [batch, nstep, action_sequence]
-            masks = self._dict['masks'][seq_indices]  # [batch, nstep, action_sequence]
+            rewards = self._dict['rewards'][seq_indices]  # [batch, action_sequence]
+            masks = self._dict['masks'][seq_indices]  # [batch, action_sequence]
 
-            # First compute inner action_sequence discounts
-            inner_discount_powers = self.discount ** np.arange(self.critic_action_sequence)[None, None, :]
-            inner_returns = np.sum(rewards * inner_discount_powers, axis=2)  # [batch, nstep]
+            # Compute discounted return: r₀ + γr₁ + γ²r₂ + ...
+            discount_powers = self.discount ** np.arange(self.action_sequence)[None, :]
+            batch['rewards'] = np.sum(rewards * discount_powers, axis=1)  # [batch]
 
-            # Then compute outer nstep discounts
-            outer_discount_powers = self.discount2 ** np.arange(self.nstep)[None, :]
-            batch['rewards'] = np.sum(inner_returns * outer_discount_powers, axis=1)  # [batch]
+            # Mask: 0 if any step hits terminal
+            batch['masks'] = np.prod(masks, axis=1)  # [batch]
 
-            # Compute combined masks
-            batch['masks'] = np.prod(np.prod(masks, axis=2), axis=1)
-            total_steps = self.nstep * self.critic_action_sequence
-
-            # Get final next observations
-            next_obs_idxs = np.minimum(idxs + total_steps - 1, next_episode_starts)
+            # Get next observations at end of action sequence
+            next_obs_idxs = np.minimum(idxs + self.action_sequence - 1, next_episode_starts)
             batch['next_observations'] = jax.tree_util.tree_map(
                 lambda arr: arr[next_obs_idxs], 
                 self._dict['next_observations']
@@ -166,11 +148,9 @@ class Dataset(FrozenDict):
                 cur_idxs = np.maximum(idxs - i, initial_state_idxs)
                 obs.append(jax.tree_util.tree_map(lambda arr: arr[cur_idxs], self['observations']))
 
-            # Get next observation stack, shifted by nstep
+            # Get next observation stack
             for i in reversed(range(self.frame_stack)):
-                # Use the initial state if the index is out of bounds.
-                # next_idxs = np.maximum(idxs + (self.nstep * self.action_sequence - 1) - i, initial_state_idxs)
-                next_idxs = np.maximum(idxs + (self.nstep * self.critic_action_sequence - 1) - i, initial_state_idxs)
+                next_idxs = np.maximum(idxs + (self.action_sequence - 1) - i, initial_state_idxs)
                 next_obs.append(jax.tree_util.tree_map(lambda arr: arr[next_idxs], self['observations']))
 
             batch['observations'] = jax.tree_util.tree_map(lambda *args: np.concatenate(args, axis=-1), *obs)
@@ -182,16 +162,16 @@ class Dataset(FrozenDict):
         return batch
 
     def _get_action_sequences(self, idxs):
+        """Get action sequences starting from each idx, clipped at episode boundaries."""
         # Find next episode start for each idx to avoid crossing episode boundaries
         search_idxs = np.searchsorted(self.terminal_locs, idxs)
-        # Clip search_idxs to valid range before indexing terminal_locs
         clipped_search_idxs = np.minimum(search_idxs, len(self.terminal_locs) - 1)
         next_episode_starts = np.where(
             search_idxs < len(self.terminal_locs), self.terminal_locs[clipped_search_idxs], self.size - 1
         )
 
         # Create sequence indices for each idx
-        seq_indices = np.expand_dims(idxs, 1) + np.arange(self.actor_action_sequence)[None, :]
+        seq_indices = np.expand_dims(idxs, 1) + np.arange(self.action_sequence)[None, :]
 
         # Clip sequence indices to stay within episodes
         seq_indices = np.minimum(seq_indices, np.expand_dims(next_episode_starts, 1))
@@ -290,9 +270,7 @@ class ReplayBuffer(Dataset):
 
 def save_compact_buffer(buffer, path):
     """Saves only the data that has actually been added."""
-    # Only slice up to buffer.size
     compact_data = jax.tree_util.tree_map(lambda x: x[:buffer.size], buffer._dict)
-    
     with open(path, 'wb') as f:
         pickle.dump(compact_data, f)
 
@@ -300,8 +278,6 @@ def load_compact_buffer(path, max_size):
     """Loads a saved dataset and expands it into a ReplayBuffer of max_size."""
     with open(path, 'rb') as f:
         data = pickle.load(f)
-    
-    # We use your existing class method to initialize the structure
     return ReplayBuffer.create_from_initial_dataset(data, max_size)
 
 @dataclasses.dataclass
@@ -411,7 +387,7 @@ class GCDataset:
             distances = np.random.rand(batch_size)  # in [0, 1)
             traj_goal_idxs = np.round(
                 (
-                    np.minimum(idxs + self.dataset.actor_action_sequence, final_state_idxs) * distances
+                    np.minimum(idxs + self.dataset.action_sequence, final_state_idxs) * distances
                     + final_state_idxs * (1 - distances)
                 )
             ).astype(int)
@@ -449,7 +425,7 @@ class HGCDataset(GCDataset):
         subgoal_steps = np.full(batch_size, subgoal_steps)
 
         # Ensure minimum distance for action sequences
-        min_distance = np.maximum(self.dataset.actor_action_sequence, 1)
+        min_distance = np.maximum(self.dataset.action_sequence, 1)
         subgoal_steps = np.maximum(subgoal_steps, min_distance)
 
         # Clip to the end of the trajectory.
@@ -572,7 +548,7 @@ class HGCDataset(GCDataset):
             batch['high_actor_next_observations'] = self.get_observations(high_actor_next_idxs)
 
         # Compute low-level actor goals.
-        min_low_actor_distance = np.maximum(self.dataset.actor_action_sequence, 1)
+        min_low_actor_distance = np.maximum(self.dataset.action_sequence, 1)
         low_actor_goal_idxs = np.minimum(
             np.maximum(idxs + actor_subgoal_steps, idxs + min_low_actor_distance), final_state_idxs
         )

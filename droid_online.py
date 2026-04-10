@@ -159,11 +159,8 @@ def main(_):
     def process_train_dataset(dataset, is_dataset=True):
         if is_dataset:
             dataset = Dataset.create(**dataset)
-        dataset.actor_action_sequence = ( FLAGS.horizon_length )
-        dataset.critic_action_sequence = ( FLAGS.horizon_length )
-        dataset.nstep = 1 # Actually N step
+        dataset.action_sequence = FLAGS.horizon_length
         dataset.discount = FLAGS.discount
-        dataset.discount2 = FLAGS.discount
         dataset.p_aug = FLAGS.p_aug
         return dataset
     

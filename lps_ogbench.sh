@@ -8,7 +8,7 @@ python main.py \
     --run_group "LPS:$1:$2" \
     --task_name $2 \
     --task_num $3 \
-    --env_name "$1-singletask-task$2-v0" \
+    --env_name "$2-singletask-task$3-v0" \
     --horizon_length 5 \
     --agent.lr 3e-4 \
     --eval_interval 100000 \
