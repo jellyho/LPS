@@ -12,6 +12,7 @@
 
 
 ## 📰 News
+- [2026/04/28] [LPS](https://arxiv.org/abs/2603.05296) accepted to RSS 2026 🎉
 - [2026/03/06] [LPS](https://arxiv.org/abs/2603.05296) is now on arXiv.
 - [2026/03/05] We release the code of LPS.
 
