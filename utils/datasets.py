@@ -85,7 +85,7 @@ class Dataset(FrozenDict):
                 valid_end = start + max(0, traj_len - (self.action_sequence - 1))
                 if valid_end > start:
                     valid_indices.extend(range(start, valid_end))
-            self._valid_indices = np.array(valid_indices)
+            self._valid_indices = np.array(valid_indices, dtype=np.int64)
         return self._valid_indices
 
     def get_random_idxs(self, num_idxs):
@@ -256,17 +256,38 @@ class ReplayBuffer(Dataset):
 
     def add_transition(self, transition):
         """Add a transition to the replay buffer."""
+        if self._valid_indices is None:
+            _ = self.valid_indices
+
+        idx = self.pointer
+        overwriting = self.size == self.max_size or idx < self.size
 
         def set_idx(buffer, new_element):
-            buffer[self.pointer] = new_element
+            buffer[idx] = new_element
 
         jax.tree_util.tree_map(set_idx, self._dict, transition)
         self.pointer = (self.pointer + 1) % self.max_size
-        self.size = max(self.pointer, self.size)
+        self.size = min(self.size + 1, self.max_size)
+
+        if overwriting:
+            self.update_locs()
+            return
+
+        terminal = bool(np.asarray(transition['terminals']) > 0)
+        if terminal:
+            self.terminal_locs = np.append(self.terminal_locs, idx)
+            self.initial_locs = np.append(self.initial_locs, idx + 1)
+
+        prev_terminals = self.terminal_locs[self.terminal_locs < idx]
+        current_ep_start = prev_terminals[-1] + 1 if len(prev_terminals) > 0 else 0
+        current_ep_len = idx - current_ep_start + 1
+        if current_ep_len >= self.action_sequence:
+            self._valid_indices = np.append(self._valid_indices, idx - self.action_sequence + 1)
 
     def clear(self):
         """Clear the replay buffer."""
         self.size = self.pointer = 0
+        self._valid_indices = None
 
 def save_compact_buffer(buffer, path):
     """Saves only the data that has actually been added."""

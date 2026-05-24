@@ -318,8 +318,6 @@ def main(_):
                 log_dict['eval/success'] = 1.0 if success else 0.0
                 log_dict['eval/execution_steps'] = local_steps
                 logger.log(log_dict, step=online_step)
-                replay_buffer.update_locs()
-                
                 if len(success_list) > 0:
                     ma_sr = sum(success_list[-20:]) / len(success_list[-20:]) * 100.0
                     log_dict['eval/ma_sr'] = ma_sr

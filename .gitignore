@@ -14,3 +14,4 @@ eval_logs/
 scripts/
 *.mp4
 exp_droid/
+*.out
