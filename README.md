@@ -146,13 +146,13 @@ This codebase is built on top of [Reinforcement Learninig with Aciton Chunking](
 
 If you find this work useful, please consider citing:
 ```bibtex
-@misc{im2026latentpolicysteeringonestep,
-      title={Latent Policy Steering through One-Step Flow Policies}, 
-      author={Hokyun Im and Andrey Kolobov and Jianlong Fu and Youngwoon Lee},
-      year={2026},
-      eprint={2603.05296},
-      archivePrefix={arXiv},
-      primaryClass={cs.RO},
-      url={https://arxiv.org/abs/2603.05296}, 
-}
+@INPROCEEDINGS{ImH-RSS-26, 
+    AUTHOR    = {Hokyun Im AND Andrey Kolobov AND Jianlong Fu AND Youngwoon Lee}, 
+    TITLE     = {{Latent Policy Steering through One-Step Flow Policies}}, 
+    BOOKTITLE = {Proceedings of Robotics: Science and Systems}, 
+    YEAR      = {2026}, 
+    ADDRESS   = {Sydney, Australia}, 
+    MONTH     = {July}, 
+    DOI       = {10.15607/RSS.2026.XXII.152} 
+} 
 ```
