@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="description" content="Latent Policy Steering through One-Step Flow Policies">
+  <meta name="keywords" content="LPS, Offline RL, MeanFlow, Latent Policy Steering, Robotics">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    .tldr-container {
+      background-color: #f5f5f5;
+      border-radius: 8px;
+      padding: 30px;
+      margin: 40px 0;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    }
+
+    .tldr-title {
+      color: #333 !important;
+      font-size: 2rem !important;
+      font-weight: 700 !important;
+      margin-bottom: 25px !important;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .tldr-title::before {
+      content: "📌";
+      margin-right: 12px;
+      font-size: 1.8rem;
+    }
+
+    .tldr-video-container {
+      border-radius: 6px;
+      overflow: hidden;
+      margin: 20px 0;
+      border: 1px solid #e0e0e0;
+    }
+
+    .tldr-video {
+      width: 100%;
+      display: block;
+    }
+
+    .tldr-highlight {
+      background-color: #e8e8e8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+      .tldr-container {
+        padding: 20px;
+        margin: 20px 0;
+      }
+      .tldr-title {
+        font-size: 1.4rem !important;
+        margin-bottom: 15px !important;
+        justify-content: center;
+        text-align: center;
+      }
+      .tldr-title::before {
+        font-size: 1.4rem;
+      }
+      .has-text-justified {
+        hyphens: auto;
+        -webkit-hyphens: auto;
+      }
+      .real-world-images img {
+        width: 100% !important;
+        margin-bottom: 10px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .tldr-title {
+        font-size: 1.1rem !important;
+      }
+    }
+
+    .tldr-title {
+      word-break: keep-all;
+      overflow-wrap: break-word;
+      line-height: 1.3;
+    }
+
+    .has-text-justified {
+      text-align: left !important;
+      hyphens: auto;
+      -webkit-hyphens: auto;
+    }
+
+    .method-box, .key-insight, .content ul, .content ol {
+      text-align: left !important;
+    }
+
+    p {
+      line-height: 1.65;
+    }
+
+    .method-box {
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      border-radius: 10px;
+      padding: 25px;
+      margin: 15px 0;
+      border-left: 4px solid #495057;
+    }
+
+    .method-box h4 {
+      margin-top: 0;
+      color: #212529;
+    }
+
+    .equation-box {
+      background-color: #fff;
+      border: 1px solid #dee2e6;
+      border-radius: 6px;
+      padding: 15px 20px;
+      margin: 15px 0;
+      text-align: center;
+      font-family: 'Castoro', serif;
+      font-size: 1.1em;
+    }
+
+    .key-insight {
+      background-color: #fff3cd;
+      border-left: 4px solid #ffc107;
+      padding: 15px 20px;
+      margin: 20px 0;
+      border-radius: 0 6px 6px 0;
+    }
+
+    .key-insight strong {
+      color: #856404;
+    }
+  </style>
+  <title>Latent Policy Steering through One-Step Flow Policies</title>
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-E0BNHRNJYF"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+
+    gtag('config', 'G-E0BNHRNJYF');
+  </script>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
+
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="./static/js/bulma-carousel.min.js"></script>
+  <script src="./static/js/bulma-slider.min.js"></script>
+  <script src="./static/js/index.js"></script>
+  <style>
+    /* ---- typography & rhythm (loaded after Bulma on purpose) ---- */
+    :root { --ink: #2b2d33; --ink-soft: #5b5f69; --line: #e7e8ec; --accent: #0f0f70; --tint: #eef0f8; }
+    body { color: var(--ink); font-size: 17px; -webkit-font-smoothing: antialiased; }
+    .content p, .content li, p { line-height: 1.75; color: var(--ink); }
+    .content p:not(:last-child) { margin-bottom: 1.1em; }
+    .has-text-justified { text-align: left !important; hyphens: none; -webkit-hyphens: none; }
+    .content b, .content strong { color: #15161a; font-weight: 600; }
+    .section { padding: 4rem 1.5rem; }
+    hr { background: var(--line); height: 1px; margin: 0; }
+    .title, .publication-title { font-family: 'Google Sans', 'Noto Sans', sans-serif; letter-spacing: -0.01em; color: #15161a; }
+    .title.is-3 { font-size: 2rem; margin-bottom: 1.5rem !important; }
+    .title.is-4 { font-size: 1.5rem; margin-bottom: 1.25rem !important; }
+    .section img { display: block; margin: 0 auto 1.5rem; border-radius: 4px; }
+    .content ul { margin-top: 0.5em; }
+    .content li + li { margin-top: 0.6em; }
+
+    /* ---- header ---- */
+    .publication-title { font-weight: 500; line-height: 1.2; margin-bottom: 1.25rem !important; }
+    .publication-venue .title { display: inline-block; font-size: 1rem; font-weight: 600; letter-spacing: 0.08em;
+      color: var(--accent); background: var(--tint); padding: 0.35em 0.9em; border-radius: 999px; margin-bottom: 1.25rem; }
+    .publication-authors { font-size: 1.15rem !important; line-height: 1.8; }
+    .publication-authors .author-block { margin: 0 0.15em; }
+    .publication-links { margin-top: 0.75rem; }
+    .publication-authors a { color: var(--accent) !important; }
+    .publication-links .button.is-dark { background: var(--accent); }
+    .publication-links .button.is-dark:hover { background: #24248f; }
+
+    /* ---- TL;DR + abstract ---- */
+    .tldr-container { background: var(--tint); border: none; border-left: 4px solid var(--accent); border-radius: 0 10px 10px 0;
+      box-shadow: none; padding: 1.6rem 2rem; margin: 2.5rem 0 3rem; text-align: left; }
+    .tldr-label { display: block; font-family: 'Google Sans', sans-serif; font-size: 0.8rem; font-weight: 700;
+      letter-spacing: 0.14em; color: var(--accent); margin-bottom: 0.5rem; }
+    .tldr-title { font-family: 'Google Sans', 'Noto Sans', sans-serif; font-size: 1.4rem !important; font-weight: 500 !important;
+      line-height: 1.5 !important; color: #15161a !important; margin: 0 !important; display: block; text-align: left; }
+    .tldr-title::before { content: none; }
+    .hl-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; text-align: left; margin-bottom: 1.5rem; }
+    .hl-card { border: 1px solid var(--line); border-radius: 12px; padding: 1.25rem 1.35rem; background: #fff; }
+    .hl-kicker { display: block; font-family: 'Google Sans', sans-serif; font-size: 1.05rem; font-weight: 600; color: #15161a; margin-bottom: 0.4rem; }
+    .hl-card p { font-size: 0.95rem; line-height: 1.6; color: var(--ink-soft); margin: 0; }
+    .abstract-details { text-align: center; }
+    .abstract-text { text-align: left; max-width: 46rem; margin: 1.25rem auto 0; }
+    .abstract-text p { color: var(--ink-soft); }
+
+    /* ---- method boxes ---- */
+    .method-box { background: #f7f8fc; border-left: 3px solid var(--accent); border-radius: 0 10px 10px 0; padding: 1.4rem 1.75rem; margin: 1rem 0; }
+    .key-insight { border-radius: 0 10px 10px 0; padding: 1.1rem 1.5rem; }
+
+    /* ---- expandable details ---- */
+    .expand-toggle { cursor: pointer; display: inline-block; font-family: 'Google Sans', sans-serif; font-size: 1rem; font-weight: 500;
+      color: var(--ink-soft); border: 1px solid var(--line); border-radius: 999px; padding: 0.45em 1.2em; margin: 1rem 0 0.5rem;
+      list-style: none; transition: background 0.15s, color 0.15s; }
+    .expand-toggle::-webkit-details-marker { display: none; }
+    .expand-toggle::before { content: "+"; margin-right: 0.5em; font-weight: 700; }
+    details[open] > .expand-toggle::before { content: "−"; }
+    .expand-toggle:hover { background: #f3f4f6; color: var(--ink); }
+    details.is-centered, .abstract-details { text-align: center; }
+    details > :not(summary) { text-align: initial; }
+
+    @media (max-width: 768px) {
+      body { font-size: 16px; }
+      .section { padding: 2.75rem 1rem; }
+      .tldr-container { padding: 1.2rem 1.25rem; }
+      .tldr-title { font-size: 1.15rem !important; }
+      .title.is-3 { font-size: 1.6rem; }
+      .hl-cards { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <nav class="navbar" role="navigation" aria-label="main navigation">
+    <div class="navbar-brand">
+      <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+      </a>
+    </div>
+    <div class="navbar-menu">
+      <div class="navbar-start" style="flex-grow: 1; justify-content: center;">
+        <a class="navbar-item" href="https://jellyho.github.io">
+          <span class="icon">
+            <i class="fas fa-home"></i>
+          </span>
+        </a>
+
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">
+            More Research
+          </a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="https://jellyho.github.io/TwinVLA">
+              TwinVLA
+            </a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </nav>
+
+
+  <section class="hero">
+    <div class="hero-body" style="padding-bottom: 0;">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column has-text-centered">
+            <h1 class="title is-1 publication-title">Latent Policy Steering through One-Step Flow Policies</h1>
+            <div class="is-size-5 publication-venue">
+              <h2 class="title">RSS 2026</h2>
+            </div>
+            <div class="is-size-5 publication-authors">
+              <span class="author-block">
+                <a href="https://jellyho.github.io">Hokyun Im</a><sup>1</sup>,</span>
+              <span class="author-block">
+                <a href="https://www.microsoft.com/en-us/research/people/akolobov/">Andrey Kolobov</a><sup>2</sup>,
+              </span>
+              <span class="author-block">
+                <a href="https://www.microsoft.com/en-us/research/people/jianf/">Jianlong Fu</a><sup>2</sup>,
+              </span>
+              <span class="author-block">
+                <a href="https://youngwoon.github.io/">Youngwoon Lee</a><sup>1</sup>
+              </span>
+            </div>
+
+            <div class="is-size-5 publication-authors">
+              <span class="author-block"><sup>1</sup>Yonsei University,</span>
+              <span class="author-block"><sup>2</sup>Microsoft Research</span>
+            </div>
+
+            <div class="column has-text-centered">
+              <div class="publication-links">
+                <!-- PDF Link. -->
+                <span class="link-block">
+                  <a href="./LPS.pdf" class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon">
+                      <i class="fas fa-file-pdf"></i>
+                    </span>
+                    <span>Paper</span>
+                  </a>
+                </span>
+                <span class="link-block">
+                  <a href="https://arxiv.org/abs/2603.05296" class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon">
+                      <i class="ai ai-arxiv"></i>
+                    </span>
+                    <span>arXiv</span>
+                  </a>
+                </span>
+                <!-- Code Link. -->
+                <span class="link-block">
+                  <a href="https://github.com/jellyho/LPS" class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon">
+                      <i class="fab fa-github"></i>
+                    </span>
+                    <span>Code</span>
+                  </a>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TL;DR + Abstract -->
+  <section class="section" style="padding-top: 0;">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-full-width">
+          <div class="tldr-container">
+            <span class="tldr-label">TL;DR</span>
+            <p class="tldr-title">Robust, Tuning-Free Offline RL — via direct Q-gradient backprop through a one-step flow policy, eliminating both proxy latent critics and brittle α tuning.</p>
+          </div>
+          <div class="hl-cards">
+            <div class="hl-card">
+              <span class="hl-kicker">No proxy critic</span>
+              <p>Action-space Q-gradients flow through a one-step MeanFlow policy straight into the latent actor.</p>
+            </div>
+            <div class="hl-card">
+              <span class="hl-kicker">No &alpha; tuning</span>
+              <p>The base policy fixes the support, so one setting works everywhere; success stays flat for &alpha; from 0.01 to 300.</p>
+            </div>
+            <div class="hl-card">
+              <span class="hl-kicker">Works on real robots</span>
+              <p>56.2% average success on four DROID tasks, versus 35.0% for DSRL and 31.2% for flow BC.</p>
+            </div>
+          </div>
+          <details class="abstract-details">
+            <summary class="expand-toggle is-centered">Read the abstract</summary>
+            <div class="content abstract-text">
+              <p>
+                  Offline reinforcement learning (RL) allows robots to learn from offline datasets without risky
+                  exploration. Yet, offline RL's performance often hinges on a brittle trade-off between
+                  (1) return maximization, which can push policies outside the dataset support, and
+                  (2) behavioral constraints, which typically require sensitive hyperparameter tuning.
+                  Latent steering offers a structural way to stay within the dataset support during RL,
+                  but existing offline adaptations commonly approximate action values using latent-space critics
+                  learned via indirect distillation, which can lose information and hinder convergence.
+                  We propose <b>Latent Policy Steering (LPS)</b>, which enables high-fidelity latent policy improvement
+                  by backpropagating original-action-space Q-gradients through a differentiable one-step MeanFlow policy
+                  to update a latent-action-space actor. By eliminating proxy latent critics, LPS allows an
+                  original-action-space critic to guide end-to-end latent-space optimization, while the one-step
+                  MeanFlow policy serves as a behavior-constrained generative prior. This decoupling yields a robust
+                  method that works out-of-the-box with minimal tuning. Across OGBench and real-world robotic tasks, LPS
+                  achieves state-of-the-art performance and consistently outperforms behavioral cloning and strong
+                  latent steering baselines.
+                </p>
+            </div>
+          </details>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- Limitations of Prior Works -->
+  <section class="section">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered has-text-centered">
+        <div class="column">
+          <h2 class="title is-3">Limitations of Prior Works</h2>
+          <div class="content has-text-justified">
+            <p>
+              Behavior-regularized offline RL (e.g., <b>TD3+BC</b>) hinges on a sensitive weight α. Latent steering (e.g., <b>DSRL</b>) avoids α, but relies on a distilled latent critic whose gradients can be <i>inaccurate</i>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="container is-max-desktop">
+      <details>
+        <summary class="expand-toggle">Click to expand details</summary>
+        <div class="columns" style="margin-top: 15px;">
+          <div class="column">
+            <div class="content has-text-justified">
+              <h3 class="title is-4">Behavioral constraint is too sensitive</h3>
+              <img src="./static/images/QCFQL.png" alt="QCFQL">
+              <img src="./static/images/alpha_sensitivity.png" alt="Sensitivity to regularization weight alpha">
+              <p>
+              Large α is too conservative, small α leaves the data support, and the best value shifts with reward scale, data, and model size.
+            </p>
+            </div>
+          </div>
+          <div class="column">
+            <div class="content has-text-justified">
+              <h3 class="title is-4">Latent-space critic is not enough</h3>
+              <img src="./static/images/DSRL.png" alt="DSRL">
+              <img src="./static/images/latent_conflict.png" alt="Latent-space critic gradient mismatch">
+              <p>
+              A distilled latent Q can fit values well and still give gradients ∇<sub>z</sub>Q that point the wrong way.
+            </p>
+            </div>
+          </div>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- Method: Latent Policy Steering -->
+  <section class="section">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered has-text-centered">
+        <div class="column">
+          <h2 class="title is-3">Latent Policy Steering (LPS)</h2>
+          <div class="tldr-video-container">
+            <video class="tldr-video" id="teaser" autoplay muted loop controls>
+              <source src="./static/videos/LPS_web.mp4" type="video/mp4">
+            </video>
+          </div>
+          <div class="content has-text-justified">
+            <p>
+              <b>LPS</b> keeps a fixed generative policy to define the data support and trains a latent actor to steer it, using gradients of the original action-space critic: no latent critic, no α.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="columns is-centered">
+        <div class="column">
+          <div class="content">
+            <div class="method-box">
+              <h4 class="title is-5">1. Differentiable Base Policy via MeanFlow</h4>
+              <p>
+              A one-step <b>MeanFlow</b> policy is differentiable end to end, so critic gradients reach the latent actor directly.
+            </p>
+            </div>
+
+            <div class="method-box">
+              <h4 class="title is-5">2. Spherical Latent Geometry</h4>
+              <p>
+              Latents live on the sphere S<sup>d−1</sup> (radius √d), which prevents norm blow-up.
+            </p>
+            </div>
+
+            <div class="method-box">
+              <h4 class="title is-5">3. Direct Latent Policy Steering</h4>
+              <div class="equation-box">
+                ℒ<sub>LPS</sub> = −𝔼<sub>s∼D</sub>[Q<sub>θ</sub>(s, π<sub>β</sub>(s, π<sub>ϕ</sub>(s)))]
+              </div>
+              <p>
+                Gradients from Q<sub>θ</sub> propagate through π<sub>β</sub> to π<sub>ϕ</sub>
+                — no proxy latent critic, no α tuning needed.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- Experiments -->
+  <section class="section">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered has-text-centered">
+        <div class="column">
+          <h2 class="title is-3">Experiments</h2>
+          <div class="content has-text-justified">
+            <p>
+              All methods share the same Q-Chunking critic and differ only in how the policy is extracted: <b>QC-FQL</b> / <b>QC-MFQL</b> (action-space distillation), <b>DSRL</b> (latent critic), and <b>CFGRL</b> (classifier-free guidance).
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered has-text-centered">
+        <div class="column">
+          <h2 class="title is-4">Real-World (Franka)</h2>
+          <div class="real-world-images" style="display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap;">
+            <img src="./static/images/real_exp.png" alt="Real-World" style="width: 48%;">
+            <img src="./static/images/real_world_plot.png" alt="Real-World Plot" style="width: 48%;">
+          </div>
+          <div class="content has-text-justified">
+            <p>
+              Four DROID tasks on a Franka Research 3, 50 demonstrations each. <b>LPS averages 56.2%</b>, ahead of DSRL (35.0%), Flow-BC (31.2%), and MF-BC (28.7%).
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top: 0;">
+    <div class="container is-max-desktop">
+      <details class="is-centered">
+        <summary class="expand-toggle is-centered">Click to see rollout videos
+        </summary>
+        <div style="margin-top: 24px;">
+
+          <style>
+            .video-block {
+              margin-bottom: 28px;
+            }
+
+            .video-block .task-title {
+              font-size: 1rem;
+              font-weight: 700;
+              border-left: 4px solid #0f0f70;
+              padding-left: 10px;
+              margin-bottom: 10px;
+            }
+
+            .video-row {
+              display: grid;
+              grid-template-columns: repeat(4, 1fr);
+              gap: 12px;
+            }
+
+            @media (max-width: 540px) {
+              .video-row {
+                grid-template-columns: repeat(2, 1fr);
+              }
+            }
+
+            .video-card {
+              text-align: center;
+              min-height: 100px;
+              /* 로딩 전 최소 높이 확보 */
+            }
+
+            .video-card .baseline-label {
+              font-size: 0.78rem;
+              font-weight: 600;
+              color: #555;
+              margin-bottom: 6px;
+              text-transform: uppercase;
+              letter-spacing: 0.04em;
+            }
+
+            .video-card.lps-card .baseline-label {
+              color: #0f0f70;
+            }
+
+            .video-card video {
+              width: 100%;
+              border-radius: 6px;
+              display: block;
+              aspect-ratio: 16 / 9;
+              /* 비디오 비율 강제 (보통 16:9) */
+              background-color: #f0f0f0;
+              /* 로딩 전 배경색 */
+              box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+            }
+          </style>
+
+          <!-- Task 1: Pick & Place Carrots -->
+          <div class="video-block">
+            <p class="task-title">Pick &amp; Place Carrots</p>
+            <div class="video-row">
+              <div class="video-card">
+                <p class="baseline-label">Flow-BC</p>
+                <video class="tldr-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="./static/videos/carrots_flow_bc.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video-card">
+                <p class="baseline-label">MF-BC</p>
+                <video class="tldr-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="./static/videos/carrots_mf_bc.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video-card">
+                <p class="baseline-label">DSRL</p>
+                <video class="tldr-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="./static/videos/carrots_dsrl.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video-card lps-card">
+                <p class="baseline-label">LPS (Ours)</p>
+                <video class="tldr-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="./static/videos/carrots_lps.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </div>
+
+          <!-- Task 2: Eggplant to Bin -->
+          <div class="video-block">
+            <p class="task-title">Eggplant to Bin</p>
+            <div class="video-row">
+              <div class="video-card">
+                <p class="baseline-label">Flow-BC</p>
+                <video class="tldr-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="./static/videos/eggplant_flow_bc.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video-card">
+                <p class="baseline-label">MF-BC</p>
+                <video class="tldr-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="./static/videos/eggplant_mf_bc.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video-card">
+                <p class="baseline-label">DSRL</p>
+                <video class="tldr-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="./static/videos/eggplant_dsrl.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video-card lps-card">
+                <p class="baseline-label">LPS (Ours)</p>
+                <video class="tldr-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="./static/videos/eggplant_lps.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </div>
+
+          <!-- Task 3: Plug in Bulb -->
+          <div class="video-block">
+            <p class="task-title">Plug in Bulb</p>
+            <div class="video-row">
+              <div class="video-card">
+                <p class="baseline-label">Flow-BC</p>
+                <video class="tldr-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="./static/videos/bulb_flow_bc.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video-card">
+                <p class="baseline-label">MF-BC</p>
+                <video class="tldr-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="./static/videos/bulb_mf_bc.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video-card">
+                <p class="baseline-label">DSRL</p>
+                <video class="tldr-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="./static/videos/bulb_dsrl.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video-card lps-card">
+                <p class="baseline-label">LPS (Ours)</p>
+                <video class="tldr-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="./static/videos/bulb_lps.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </div>
+
+          <!-- Task 4: Refill Tape -->
+          <div class="video-block">
+            <p class="task-title">Refill Tape</p>
+            <div class="video-row">
+              <div class="video-card">
+                <p class="baseline-label">Flow-BC</p>
+                <video class="tldr-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="./static/videos/tape_flow_bc.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video-card">
+                <p class="baseline-label">MF-BC</p>
+                <video class="tldr-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="./static/videos/tape_mf_bc.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video-card">
+                <p class="baseline-label">DSRL</p>
+                <video class="tldr-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="./static/videos/tape_dsrl.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video-card lps-card">
+                <p class="baseline-label">LPS (Ours)</p>
+                <video class="tldr-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="./static/videos/tape_lps.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered has-text-centered">
+        <div class="column">
+          <h2 class="title is-4">Simulation (OGBench)</h2>
+          <img src="./static/images/OGBench_plot.png" alt="OGBench Plot">
+          <div class="content has-text-justified">
+            <p>
+              Five state-based OGBench domains plus visual variants. <b>LPS has the highest average</b>, clearly beats QC-FQL and QC-MFQL, and is on par with or better than DSRL in every domain.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <hr />
+
+  <!-- Sensitivity Analysis -->
+  <section class="section">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <!-- 1st Column -->
+        <div class="column">
+          <div class="content has-text-justified">
+            <h3 class="title is-4">Robustness to α</h3>
+            <img src="./static/images/alpha.png" alt="Sensitivity to regularization weight"
+              style="width:100%; display: block; margin: auto;">
+            <p>
+              QC-MFQL works only near one task-specific α. <b>LPS stays flat across α</b> and above DSRL at every value.
+            </p>
+          </div>
+        </div>
+        <!-- 2nd Column -->
+        <div class="column">
+          <div class="content has-text-justified">
+            <h3 class="title is-4">Computational Efficiency</h3>
+            <img src="./static/images/compute.png" alt="Computational cost comparison"
+              style="width: 100%; display: block; margin-bottom:8%;">
+            <p>
+              MeanFlow produces an action in <b>one forward pass</b>, so LPS trains and acts faster than DSRL without backpropagating through an ODE solver.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- Ablation Study -->
+  <section class="section">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered has-text-centered">
+        <div class="column">
+          <h2 class="title is-4">Ablation Study</h2>
+          <img src="./static/images/ablation_merged.png" alt="ablation merged">
+          <div class="content has-text-justified">
+            <ul>
+              <li><b>Sphere latents (a–c):</b> free for the baselines (a) but essential for LPS (b); normal latents blow up and truncated ones saturate (c).</li>
+              <li><b>One-step MeanFlow (d):</b> beats a 10-step flow (unstable backprop through sampling) and a 1-step flow (inaccurate).</li>
+              <li><b>Action reformulation (e):</b> predicting denoised actions instead of raw velocity is what makes MeanFlow trainable here.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+
+  <section class="section" id="BibTeX">
+    <div class="container is-max-desktop content">
+      <h2 class="title">BibTeX</h2>
+      <pre><code>@inproceedings{im2026lps,
+  author    = {Im, Hokyun and Kolobov, Andrey and Fu, Jianlong and Lee, Youngwoon},
+  title     = {Latent Policy Steering through One-Step Flow Policies},
+  booktitle = {Proceedings of Robotics: Science and Systems (RSS)},
+  address   = {Sydney, Australia},
+  month     = {July},
+  year      = {2026}
+}</code></pre>
+    </div>
+  </section>
+
+
+  <footer class="footer">
+    <div class="container">
+      <div class="columns is-centered">
+        <div class="column is-8">
+          <div class="content">
+            <p style="text-align: center;">
+              We used template from <a href="https://nerfies.github.io/">Nerfies</a>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+
+</body>
+
+</html>
