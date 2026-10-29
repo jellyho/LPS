@@ -1,0 +1,13 @@
+# OGBench simulation extras.  Install on top of requirements.txt:
+#
+#   pip install -r requirements.txt
+#   pip install -r requirements_ogbench.txt
+#
+# These are the only packages the simulated benchmark needs beyond the default install, and they
+# are kept apart because mujoco is the one dependency that fights the robot-side stack.
+
+dm-env==1.6
+dm-tree==0.1.9
+dm_control==1.0.28
+mujoco==3.3.1
+ogbench==1.1.2

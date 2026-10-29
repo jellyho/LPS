@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+.ruff_cache/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+
+# Run outputs: checkpoints (exp/, exp_droid/, exp_lerobot/, ...), logs, videos, plots
+exp*/
+wandb/
+logs/
+eval_logs/
+video/
+plots/
+scripts/
+*.mp4
+*.out
